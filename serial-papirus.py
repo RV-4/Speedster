@@ -58,7 +58,11 @@ sleep(5)       # Wait for the PaPiRus display and USB port to activate
 #text.AddText("SMOKE TANK",  10, 36, 30, Id="Line-2")    38, 30
 #text.AddText("BOOTING",     15, 60, 39, Id="Line-3")    66, 30
 
-text = PapirusTextPos(False)
+try:
+    text = PapirusTextPos(False)
+except:
+    print("Error: Unable to initialize PapirusTextPos")
+    exit()
 
 text.Clear()
 time.sleep(1.0)
