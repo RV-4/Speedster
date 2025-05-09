@@ -3,8 +3,8 @@
 
 # /home/pi/1TM/serial-papirus.py
 
-#  Version 1.6.2
-print("serial-papirus.py Version 1.6.2")
+#  Version 2.0
+print("serial-papirus.py Version 2.0")
 
 
 # Power Raspberry Pi Zero via Micro-USB in USB port.
@@ -42,7 +42,7 @@ print("serial-papirus.py Version 1.6.2")
 
 
 # To run at boot must have entry in /etc/rc.local
-# sudo python3 /home/pi/1TM/serial-papirus.py &
+# sudo python3 /home/zap/Speedster/serial-papirus.py &
 
 import socket
 import os
@@ -51,7 +51,8 @@ import serial
 import time
 from papirus import PapirusTextPos
 
-sleep(5)       # Wait for the PaPiRus display and USB port to activate
+print("Waiting for PaPiRus display and USB OTG to be ready")
+sleep(5)
 
 #  2" PaPiRus Display size is:  200 X 96 pixels
 #text.AddText("N221TM",      30,  0, 39, Id="Line-1")
@@ -61,7 +62,7 @@ sleep(5)       # Wait for the PaPiRus display and USB port to activate
 try:
     text = PapirusTextPos(False)
 except:
-    print("Error: Unable to initialize PapirusTextPos")
+    print("Error: Unable to initialize PapirusTextPos.  Display not attached?\r\n   Program will exit")
     exit()
 
 text.Clear()
