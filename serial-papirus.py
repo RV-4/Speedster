@@ -3,8 +3,8 @@
 
 # /home/pi/1TM/serial-papirus.py
 
-#  Version 2.0
-print("serial-papirus.py Version 2.0")
+#  Version 2.a
+print("serial-papirus.py Version 2.0a")
 
 
 # Power Raspberry Pi Zero via Micro-USB in USB port.
@@ -60,7 +60,7 @@ sleep(5)
 #text.AddText("BOOTING",     15, 60, 39, Id="Line-3")    66, 30
 
 try:
-    text = PapirusTextPos(False)
+    text = PapirusTextPos(True)
 except:
     print("Error: Unable to initialize PapirusTextPos.  Display not attached?\r\n   Program will exit")
     exit()
@@ -129,7 +129,7 @@ text.AddText(" N221TM",    0,  0, 39, Id="Line-1")
 text.AddText("  RV 4.5 ",  0, 37, 30, Id="Line-2")
 text.AddText(" Speedster", 0, 66, 30, Id="Line-3")
 text.WriteAll()
-time.sleep(5.0)
+time.sleep(1.0)
 
 while True:
     automationhat_bytes = automationhat_serial.read_until(b'\r\n', None)
