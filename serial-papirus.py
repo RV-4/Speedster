@@ -3,8 +3,8 @@
 
 # /home/pi/1TM/serial-papirus.py
 
-#  Version 2.a
-print("serial-papirus.py Version 2.0a")
+#  Version 2.6
+print("serial-papirus.py Version 2.6")
 
 
 # Power Raspberry Pi Zero via Micro-USB in USB port.
@@ -23,10 +23,12 @@ print("serial-papirus.py Version 2.0a")
 
 # Program will read from OTG serial port connected to Automationhat Pi
 # Format of data stream is:
-# !41+ssssGhhhhhfff
+# !41+ssssGhhhhhfffr
 # "+ssssG"   is the amount of smoke oil remaining in tenths of gallons
 # "yyyyy"    is the Total Time (Hobbs Time) in tenths of hours from Dynon EMS
 # "fff"      is the Total Fuel Remaining in tents of gallons
+# "r"        is engine runnuing status, 'r' for running, 's' for stopped
+# Example: !41+0005G00001f100r
 
 # !51aaa.bbb.ccc.ddd   IP Address of Automationhat Pi
 
@@ -46,6 +48,7 @@ print("serial-papirus.py Version 2.0a")
 
 import socket
 import os
+import sys
 from time import sleep
 import serial
 import time
@@ -60,19 +63,20 @@ sleep(5)
 #text.AddText("BOOTING",     15, 60, 39, Id="Line-3")    66, 30
 
 try:
-    text = PapirusTextPos(True)
+    textPu = PapirusTextPos(True)
+    text = PapirusTextPos(False)
 except:
     print("Error: Unable to initialize PapirusTextPos.  Display not attached?\r\n   Program will exit")
     exit()
 
-text.Clear()
-time.sleep(1.0)
+#text.Clear()
+#time.sleep(1.0)
 
-text.AddText("N221TM",     0,  0, 39)
-text.AddText("SMOKE TANK", 0, 37, 30)
-text.AddText("BOOTING",    0, 66, 30)
-text.WriteAll()
-time.sleep(10.0)
+#text.AddText("N221TM",     0,  0, 39)
+#text.AddText("SMOKE TANK", 0, 37, 30)
+#text.AddText("BOOTING",    0, 66, 30)
+#text.WriteAll()
+#time.sleep(10.0)
 
 try:
     text.Clear()
@@ -88,7 +92,7 @@ except:
     print("Error: Unable to get IP address")
 
 #                      coll, row, height
-text.AddText("N221TM ",0,  0, 39, Id="Line-1-Addr")
+text.AddText("N221TM",  5,  0, 39, Id="Line-1-Addr")
 text.AddText(host,      0, 39, 25, Id="Line-2-Addr")
 text.AddText(ipaddr,    0, 65, 25, Id="Line-3-Addr")
 
@@ -111,27 +115,51 @@ except serial.SerialException:
     print("Error: Unable to open serial port")
     exit()
 
-last_fuel =  100.1
-last_smoke = 100.1
-last_hobbs = 100.1
+logfile = open("/home/pi/1TM/serial-papirus.log", "r+")
+data=logfile.readline()
+dataList = data.split(",")
+print("data:", data)
+print ("dataList:", dataList)
+
+if len(dataList) > 0:
+    logfile.close()
+    try:
+        last_hobbs = float(dataList[0])
+        last_fuel = float(dataList[1])
+        last_smoke = float(dataList[2])
+
+        print("Last Fuel:", last_fuel, "Last Smoke:", last_smoke, "Last Hobbs:", last_hobbs)
+    except ValueError:
+        print("Error: Unable to parse previous values from log file")
+        last_fuel = 100.1
+        last_smoke = 100.1
+        last_hobbs = 100.1
+else:
+    print("No previous values found in log file, using defaults")
+    last_fuel = 100.1
+    last_smoke = 100.1
+    last_hobbs = 100.1
+
 hobbs      = 200.1
 smoke_gal  = 200.1
 fuel       = 200.1
 update     = False
 loop_count = 0
+engine_status = 's'  # 'r' for running, 's' for stopped
 
 # automationhat_serial.flushInput()                      # Flush input
 # automationhat_bytes = automationhat_serial.read_until(b'\r\n', None)
 
-text.Clear()
+#text.Clear()
 time.sleep(1.0)
-text.AddText(" N221TM",    0,  0, 39, Id="Line-1")
-text.AddText("  RV 4.5 ",  0, 37, 30, Id="Line-2")
-text.AddText(" Speedster", 0, 66, 30, Id="Line-3")
-text.WriteAll()
+textPu.AddText(" N221TM",    0,  0, 39, Id="Line-1")
+textPu.AddText("  RV 4.5 ",  0, 37, 30, Id="Line-2")
+textPu.AddText(" Speedster", 0, 66, 30, Id="Line-3")
+#text.WriteAll()
 time.sleep(1.0)
 
 while True:
+    engine_status_prev = engine_status
     automationhat_bytes = automationhat_serial.read_until(b'\r\n', None)
 #    automationhat_bytes = automationhat_serial.readline()
     print(automationhat_bytes)
@@ -144,6 +172,9 @@ while True:
     smoke_str = automationhat_str[3:9]
     hobbs_str = automationhat_str[9:14]
     fuel_remain_str = automationhat_str[14:17]
+    engine_status = automationhat_str[17:18]
+
+    print("engine_status:", engine_status)
 
     print('Smoke Level: ',   smoke_str, ' Gallons')
     print('Total Time: ',    hobbs_str, ' Hours')
@@ -157,7 +188,7 @@ while True:
             gallonsF = "{:.1f}".format(smoke_gal)
             gallonsF = gallonsF + "  Smoke"
             if smoke_gal < 0.5: gallonsF = "-EMPTY-"
-            text.UpdateText("Line-3", gallonsF)
+            textPu.UpdateText("Line-3", gallonsF)
             print("GallonsF:", gallonsF)
             last_smoke = smoke_gal
             update = True
@@ -171,7 +202,7 @@ while True:
         if fuel_change > 0:
             fuelF = "{:.1f}".format(fuel)
             fuelF = fuelF + " Fuel"
-            text.UpdateText("Line-2", fuelF)
+            textPu.UpdateText("Line-2", fuelF)
             print("fuelF:", fuelF)
             last_fuel = fuel
             update = True
@@ -185,14 +216,17 @@ while True:
         if hobbs_change > 0:
             hobbsF = "{:.1f}".format(hobbs)
             if hobbs < 1000:  hobbsF = hobbsF + " TT"
-            text.UpdateText("Line-1", hobbsF)
+            if engine_status == "s" and engine_status_prev == "r":
+                textPu.UpdateText("Line-1", hobbsF)
+                print("Engine stopped, updating Line-1 with Hobbs")
+                sys.exit(0)
             print("hobbsF:", hobbsF)
             last_hobbs = hobbs
             update = True
     except ValueError:
         print()
     if update or loop_count > 50:
-        text.WriteAll()
+        #text.WriteAll()
         update = False
         loop_count = 0
     loop_count += 1
