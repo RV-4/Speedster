@@ -3,8 +3,8 @@
 
 # /home/pi/1TM/serial-papirus.py
 
-#  Version 2.13
-print("serial-papirus.py Version 2.13")
+#  Version 2.14
+print("serial-papirus.py Version 2.14")
 
 
 # Power Raspberry Pi Zero via Micro-USB in USB port.
@@ -173,7 +173,7 @@ while True:
         smoke_gal = float(automationhat_bytes[4:8]) / 10
         print('Smoke Level:', '{0:3.1f}' .format(smoke_gal), 'Gallons')
         smoke_change = abs(smoke_gal - last_smoke)
-        if smoke_change > 0:
+        if smoke_change > 0.2:
             gallonsF = "{:.1f}".format(smoke_gal)
             gallonsF = gallonsF + "  Smoke"
             if smoke_gal < 0.25: gallonsF = "--EMPTY--"
@@ -188,7 +188,7 @@ while True:
         fuel = float(automationhat_bytes[14:17]) / 10
         print ('Fuel Level:', '{0:3.1f}' .format(fuel), 'Gallons')
         fuel_change = abs(fuel - last_fuel)
-        if fuel_change > 0:
+        if fuel_change > 0.5:  # Update if fuel changes by more than 0.5 gallons
             fuelF = "{:.1f}".format(fuel)
             fuelF = fuelF + " Fuel"
             textPu.UpdateText("Line-2", fuelF)
